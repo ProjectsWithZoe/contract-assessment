@@ -71,7 +71,7 @@ def main():
     chunks = chunk_text(pdf_text)
     embeddings = generate_embeddings(chunks)
     index = build_faiss_index(embeddings)
-    query = "What is the effective date?"
+    query = "When was this file created?"
     similar_chunks = retrieve_similar_chunks(query, index, chunks)
     answer = query_chatgpt(query, similar_chunks)
     print(answer)
