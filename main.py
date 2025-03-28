@@ -3,7 +3,13 @@ import tiktoken
 import numpy as np
 import openai
 import faiss
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
+
+# Create a single client instance to use throughout the code
+client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 #open pdf file that needs assessing
 def openFile(pdf_file):
@@ -28,11 +34,11 @@ def chunk_text(text, max_tokens=512):
     return chunks
 
 def generate_embeddings(chunks):
-    response = openai.Embedding.create(
+    response = client.embeddings.create(  # Use the global client
         input=chunks,
-        engine="text-embedding-ada-002"
+        model="text-embedding-ada-002"
     )
-    embeddings = np.array([r['embedding'] for r in response['data']])
+    embeddings = np.array([r.embedding for r in response.data])
     return embeddings
 
 def build_faiss_index(embeddings):
@@ -49,15 +55,15 @@ def retrieve_similar_chunks(query, index, chunks, top_k=5):
 def query_chatgpt(query, similar_chunks):
     context = "\n".join(similar_chunks)
     prompt = f"Context: {context}\n\nQuestion: {query}\nAnswer:"
-    response = openai.Completion.create(
-        engine="text-davinci-003",
+    response = client.completions.create(  # Use the global client
+        model="gpt-3.5-turbo-instruct",
         prompt=prompt,
         max_tokens=150,
         n=1,
         stop=None,
         temperature=0.7,
     )
-    return response.choices[0].text.strip() # Extract the generated text from the response
+    return response.choices[0].text.strip()
 
 def main():
     pdf_file = 'CTAC.pdf'
